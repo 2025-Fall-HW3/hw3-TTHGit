@@ -70,7 +70,24 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
-        
+        assets = self.price.columns[self.price.columns != self.exclude]
+
+        rolling_vol = self.returns[assets].rolling(self.lookback).std()
+
+        for i in range(self.lookback, len(self.price)):
+            date = self.price.index[i]
+
+            sigma = rolling_vol.iloc[i].values.astype(float)
+            
+            sigma[sigma == 0] = 1e-8
+
+            inv_sigma = 1.0 / sigma
+            weights = inv_sigma / inv_sigma.sum()
+
+            
+            self.portfolio_weights.loc[date, :] = 0.0
+            
+            self.portfolio_weights.loc[date, assets] = weights
         
         """
         TODO: Complete Task 4 Above

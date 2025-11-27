@@ -62,6 +62,12 @@ class EqualWeightPortfolio:
         """
         TODO: Complete Task 1 Below
         """
+        assets = df.columns[df.columns != self.exclude]
+        n = len(assets)
+
+        for date in df.index:
+            self.portfolio_weights.loc[date, :] = 0.0
+            self.portfolio_weights.loc[date, assets] = 1.0 / n
 
         """
         TODO: Complete Task 1 Above
@@ -113,8 +119,21 @@ class RiskParityPortfolio:
         """
         TODO: Complete Task 2 Below
         """
+        rolling_vol = df_returns[assets].rolling(self.lookback).std()
 
+        for i in range(self.lookback, len(df)):
+            date = df.index[i]
 
+            sigma = rolling_vol.iloc[i].values.astype(float)
+
+            sigma[sigma == 0] = 1e-8
+
+            inv_sigma = 1.0 / sigma
+            weights = inv_sigma / inv_sigma.sum()
+
+            self.portfolio_weights.loc[date, :] = 0.0
+            
+            self.portfolio_weights.loc[date, assets] = weights
 
         """
         TODO: Complete Task 2 Above
@@ -190,8 +209,18 @@ class MeanVariancePortfolio:
 
                 # Sample Code: Initialize Decision w and the Objective
                 # NOTE: You can modify the following code
-                w = model.addMVar(n, name="w", ub=1)
-                model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
+                # w = model.addMVar(n, name="w", ub=1)
+                # model.setObjective(w.sum(), gp.GRB.MAXIMIZE)
+
+                w = model.addMVar(n, lb=0.0, name="w")
+
+                model.addConstr(w.sum() == 1.0, name="budget")
+
+                quad_term = w @ Sigma @ w
+                lin_term = w @ mu
+                obj = lin_term - (gamma / 2.0) * quad_term
+
+                model.setObjective(obj, gp.GRB.MAXIMIZE)
 
                 """
                 TODO: Complete Task 3 Above
