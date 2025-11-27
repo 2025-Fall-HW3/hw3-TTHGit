@@ -70,22 +70,28 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
+        spy_price = self.price[self.exclude]
+        spy_ma200 = spy_price.rolling(window=200).mean()
+
         for i in range(self.lookback, len(self.price)):
             date = self.price.index[i]
+
+            if pd.isna(spy_ma200.iloc[i]) or spy_price.iloc[i] < spy_ma200.iloc[i]:
+                self.portfolio_weights.loc[date, :] = 0.0
+                continue
 
             R_n = self.returns[assets].iloc[i - self.lookback : i]
 
             mu = R_n.mean().values.astype(float)
             Sigma = R_n.cov().values.astype(float)
 
-
             try:
                 Sigma_reg = Sigma + 1e-6 * np.eye(len(assets))
 
                 w_raw = np.linalg.pinv(Sigma_reg) @ mu
+
             except Exception:
                 w_raw = np.ones(len(assets))
-
 
             w_raw = np.maximum(w_raw, 0.0)
 
@@ -97,7 +103,7 @@ class MyPortfolio:
             self.portfolio_weights.loc[date, :] = 0.0
 
             self.portfolio_weights.loc[date, assets] = w
-        
+
         """
         TODO: Complete Task 4 Above
         """
