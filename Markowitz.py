@@ -119,20 +119,21 @@ class RiskParityPortfolio:
         """
         TODO: Complete Task 2 Below
         """
-        rolling_vol = df_returns[assets].rolling(self.lookback).std()
+        for i in range(self.lookback + 1, len(df)):
+            R_n = df_returns[assets].iloc[i - self.lookback : i]
 
-        for i in range(self.lookback, len(df)):
-            date = df.index[i]
-
-            sigma = rolling_vol.iloc[i].values.astype(float)
+            sigma = R_n.std().values.astype(float)
 
             sigma[sigma == 0] = 1e-8
 
+        
             inv_sigma = 1.0 / sigma
             weights = inv_sigma / inv_sigma.sum()
 
-            self.portfolio_weights.loc[date, :] = 0.0
+            date = df.index[i]
+
             
+            self.portfolio_weights.loc[date, :] = 0.0
             self.portfolio_weights.loc[date, assets] = weights
 
         """

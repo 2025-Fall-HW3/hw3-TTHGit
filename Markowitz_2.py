@@ -70,24 +70,33 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
-        assets = self.price.columns[self.price.columns != self.exclude]
-
-        rolling_vol = self.returns[assets].rolling(self.lookback).std()
-
         for i in range(self.lookback, len(self.price)):
             date = self.price.index[i]
 
-            sigma = rolling_vol.iloc[i].values.astype(float)
-            
-            sigma[sigma == 0] = 1e-8
+            R_n = self.returns[assets].iloc[i - self.lookback : i]
 
-            inv_sigma = 1.0 / sigma
-            weights = inv_sigma / inv_sigma.sum()
+            mu = R_n.mean().values.astype(float)
+            Sigma = R_n.cov().values.astype(float)
 
-            
+
+            try:
+                Sigma_reg = Sigma + 1e-6 * np.eye(len(assets))
+
+                w_raw = np.linalg.pinv(Sigma_reg) @ mu
+            except Exception:
+                w_raw = np.ones(len(assets))
+
+
+            w_raw = np.maximum(w_raw, 0.0)
+
+            if w_raw.sum() == 0:
+                w = np.ones(len(assets)) / len(assets)
+            else:
+                w = w_raw / w_raw.sum()
+
             self.portfolio_weights.loc[date, :] = 0.0
-            
-            self.portfolio_weights.loc[date, assets] = weights
+
+            self.portfolio_weights.loc[date, assets] = w
         
         """
         TODO: Complete Task 4 Above
